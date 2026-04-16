@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Omran Home</title>
+
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@500;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            --safe-bg: #10b981;
+            --danger-bg: #ef4444;
+            --neutral-bg: #334155;
+            --sheet-bg: #f8fafc;
+            --text-dark: #0f172a;
+        }
+
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Cairo', sans-serif;
+            background-color: var(--neutral-bg);
+            height: 100vh;
+            overflow: hidden; /* لمنع التمرير العام */
+            display: flex;
+            flex-direction: column;
+            transition: background-color 0.5s ease;
+        }
+
+        /* --- القسم العلوي: الحالة --- */
+        .hero-section {
+            height: 40%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            text-align: center;
+            position: relative;
+            transition: all 0.5s ease;
+        }
+
+        .status-icon-big {
+            font-size: 80px;
+            margin-bottom: 10px;
+            filter: drop-shadow(0 10px 20px rgba(0,0,0,0.2));
+            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .hero-title { font-size: 32px; font-weight: 900; margin: 0; }
+        .hero-subtitle { font-size: 14px; opacity: 0.8; margin-top: 5px; font-weight: 500; }
+
+        /* --- القسم السفلي: لوحة التحكم --- */
+        .control-sheet {
+            height: 60%;
+            background-color: var(--sheet-bg);
+            border-top-left-radius: 40px;
+            border-top-right-radius: 40px;
+            padding: 30px 20px;
+            overflow-y: auto;
+            box-shadow: 0 -10px 40px rgba(0,0,0,0.15);
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            position: relative;
+        }
+
+        @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
+
+        /* شريط صغير للدلالة على السحب */
+        .sheet-handle {
+            width: 50px; height: 5px;
+            background: #cbd5e1;
+            border-radius: 10px;
+            margin: 0 auto 25px;
+        }
+
+        .section-head {
+            font-size: 18px; font-weight: 700; color: var(--text-dark);
+            margin-bottom: 15px; display: flex; align-items: center; justify-content: space-between;
+        }
+
+        /* --- شريط الغرف الأفقي (Horizontal Scroll) --- */
+        .horizontal-scroll {
+            display: flex;
+            gap: 15px;
+            overflow-x: auto;
+            padding-bottom: 10px;
+            margin-bottom: 25px;
+            scrollbar-width: none; /* Firefox */
+        }
+        .horizontal-scroll::-webkit-scrollbar { display: none; } /* Chrome */
+
+        .room-card {
+            min-width: 110px;
+            height: 140px;
+            background: white;
+            border-radius: 25px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            cursor: pointer;
+            transition: transform 0.2s;
+            border: 1px solid #f1f5f9;
+        }
+        .room-card:active { transform: scale(0.95); background: #f1f5f9; }
+        
+        .room-icon {
+            width: 45px; height: 45px;
+            border-radius: 15px;
+            background: #f8fafc;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+            color: #334155;
+        }
+        .room-name { font-weight: 700; font-size: 15px; color: var(--text-dark); }
+
+        /* تلوين أيقونات الغرف */
+        .r-kitchen .room-icon { color: #f59e0b; background: #fffbeb; }
+        .r-motor .room-icon { color: #3b82f6; background: #eff6ff; }
+        .r-salon .room-icon { color: #8b5cf6; background: #f5f3ff; }
+        .r-bed .room-icon { color: #10b981; background: #ecfdf5; }
+
+        /* --- قائمة الأجهزة العمودية (Vertical List) --- */
+        .device-list { display: flex; flex-direction: column; gap: 12px; }
+
+        .device-row {
+            background: white;
+            padding: 15px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.02);
+            border: 1px solid #f1f5f9;
+            cursor: pointer;
+        }
+        .device-row:active { background: #f8fafc; }
+
+        .d-left { display: flex; align-items: center; gap: 15px; }
+        .d-icon {
+            width: 40px; height: 40px;
+            border-radius: 12px;
+            background: #f1f5f9;
+            display: flex; align-items: center; justify-content: center;
+            color: #64748b;
+        }
+        .d-info h4 { margin: 0; font-size: 16px; }
+        .d-info span { font-size: 12px; color: #94a3b8; }
+        
+        .d-arrow { color: #cbd5e1; font-size: 14px; }
+
+    </style>
+</head>
+<body>
+
+    <div class="hero-section" id="heroBg">
+        <i class="fa-solid fa-circle-notch fa-spin status-icon-big" id="mainIcon"></i>
+        <h1 class="hero-title" id="mainStatus">جاري الاتصال...</h1>
+        <p class="hero-subtitle" id="lastUpdate">يرجى الانتظار</p>
+    </div>
+
+    <div class="control-sheet">
+        <div class="sheet-handle"></div>
+
+        <div class="section-head">
+            <span>الغرف والمحرك</span>
+            <i class="fa-solid fa-layer-group" style="color:#cbd5e1; font-size:14px;"></i>
+        </div>
+
+        <div class="horizontal-scroll">
+            <div class="room-card r-kitchen" onclick="go('http://192.1.1.1/send?kitchen')">
+                <div class="room-icon"><i class="fa-solid fa-utensils"></i></div>
+                <span class="room-name">المطبخ</span>
+            </div>
+            <div class="room-card r-motor" onclick="go('http://192.1.1.1/send?motor')">
+                <div class="room-icon"><i class="fa-solid fa-bolt"></i></div>
+                <span class="room-name">المحرك</span>
+            </div>
+            <div class="room-card r-salon" onclick="go('http://192.1.1.1/send?salon')">
+                <div class="room-icon"><i class="fa-solid fa-couch"></i></div>
+                <span class="room-name">الصالون</span>
+            </div>
+            <div class="room-card r-bed" onclick="go('http://192.1.1.1/send?bedroom')">
+                <div class="room-icon"><i class="fa-solid fa-bed"></i></div>
+                <span class="room-name">غرفة النوم</span>
+            </div>
+        </div>
+
+        <div class="section-head">
+            <span>الأجهزة المتصلة</span>
+            <i class="fa-solid fa-sliders" style="color:#cbd5e1; font-size:14px;"></i>
+        </div>
+
+        <div class="device-list">
+            <div class="device-row" onclick="go('tv.html')">
+                <div class="d-left">
+                    <div class="d-icon"><i class="fa-solid fa-tv"></i></div>
+                    <div class="d-info">
+                        <h4>التلفزيون الذكي</h4>
+                        <span>التحكم بالقنوات والصوت</span>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-left d-arrow"></i>
+            </div>
+
+            <div class="device-row" onclick="go('led-bed.html')">
+                <div class="d-left">
+                    <div class="d-icon"><i class="fa-solid fa-lightbulb"></i></div>
+                    <div class="d-info">
+                        <h4>LED السرير</h4>
+                        <span>ألوان وإضاءة خافتة</span>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-left d-arrow"></i>
+            </div>
+
+            <div class="device-row" onclick="go('led-screen.html')">
+                <div class="d-left">
+                    <div class="d-icon"><i class="fa-solid fa-desktop"></i></div>
+                    <div class="d-info">
+                        <h4>LED الشاشة</h4>
+                        <span>تزامن مع الموسيقى</span>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-left d-arrow"></i>
+            </div>
+
+            <div class="device-row" onclick="go('ceiling.html')">
+                <div class="d-left">
+                    <div class="d-icon"><i class="fa-solid fa-cloud"></i></div>
+                    <div class="d-info">
+                        <h4>سقف الغرفة</h4>
+                        <span>النجوم والإضاءة المحيطية</span>
+                    </div>
+                </div>
+                <i class="fa-solid fa-chevron-left d-arrow"></i>
+            </div>
+        </div>
+        
+        <br><br> </div>
+
+<script>
+    const SHEET_URL = "https://script.google.com/macros/s/AKfycbytR_LhSTCFCTSBko3T5sjXnzL2liPouKRE7vTx1JeAp9EziE54rGuiGaflfSf-ImxH/exec";
+    let lastStatus = null;
+
+    // عناصر الـ UI التي ستتغير
+    const heroBg = document.getElementById("heroBg");
+    const bodyBg = document.body;
+    const mainIcon = document.getElementById("mainIcon");
+    const mainStatus = document.getElementById("mainStatus");
+    const lastUpdate = document.getElementById("lastUpdate");
+
+    function updateDoor(){
+        fetch(SHEET_URL)
+        .then(r => r.json())
+        .then(data => {
+            const status = data.G1?.toString().toUpperCase();
+            const time = data.F1;
+            
+            // إعادة ضبط الكلاسات
+            mainIcon.classList.remove("fa-spin", "fa-circle-notch", "fa-lock", "fa-lock-open");
+            
+            if (status === "OPEN") {
+                // حالة الخطر/الفتح: أحمر
+                heroBg.style.backgroundColor = "var(--danger-bg)";
+                bodyBg.style.backgroundColor = "var(--danger-bg)"; // يتغير لون الخلفية بالكامل
+                mainIcon.classList.add("fa-lock-open");
+                mainStatus.innerText = "الباب مفتوح";
+            } else {
+                // حالة الأمان/الغلق: أخضر
+                heroBg.style.backgroundColor = "var(--safe-bg)";
+                bodyBg.style.backgroundColor = "var(--safe-bg)";
+                mainIcon.classList.add("fa-lock");
+                mainStatus.innerText = "المنزل مؤمن";
+            }
+            lastUpdate.innerText = "آخر تحديث: " + time;
+
+            // الاهتزاز عند تغير الحالة فقط
+            if (status !== lastStatus && lastStatus !== null && navigator.vibrate) {
+                navigator.vibrate([200, 100, 200]);
+            }
+            lastStatus = status;
+        })
+        .catch(err => {
+            heroBg.style.backgroundColor = "var(--neutral-bg)";
+            bodyBg.style.backgroundColor = "var(--neutral-bg)";
+            mainStatus.innerText = "خطأ في الاتصال";
+        });
+    }
+
+    function go(url){
+        if (navigator.vibrate) navigator.vibrate(50);
+        window.location.href = url;
+    }
+
+    updateDoor();
+    setInterval(updateDoor, 10000);
+</script>
+
+</body>
+</html>
