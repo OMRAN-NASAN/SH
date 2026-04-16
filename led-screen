@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RGB Remote Simulator</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --remote-bg: #1a1a1a;
+            --panel-bg: #2a2a2a;
+            --btn-shadow: 3px 3px 6px #101010, -1px -1px 4px #404040;
+            --btn-active-shadow: inset 2px 2px 5px #101010, inset -1px -1px 3px #404040;
+        }
+
+        body {
+            background-color: #121212;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            font-family: Arial, sans-serif;
+        }
+
+        .remote-container {
+            width: 280px;
+            background-color: var(--remote-bg);
+            padding: 20px 15px;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+            border: 1px solid #333;
+        }
+
+        /* شبكة الأزرار */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 12px;
+            justify-items: center;
+        }
+
+        button {
+            width: 48px;
+            height: 38px;
+            border-radius: 20px;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 10px;
+            font-weight: bold;
+            color: white;
+            background: var(--panel-bg);
+            box-shadow: var(--btn-shadow);
+            transition: 0.2s;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+            text-transform: uppercase;
+        }
+
+        button:active {
+            box-shadow: var(--btn-active-shadow);
+            transform: scale(0.92);
+        }
+
+        /* تخصيص الألوان والرموز */
+        .power { background: #d32f2f; font-size: 16px; }
+        .play { background: #444; font-size: 14px; }
+        .bright { background: #eee; color: #333; font-size: 14px; }
+        
+        .red { background: #f44336; }
+        .green { background: #4caf50; }
+        .blue { background: #2196f3; }
+        .white { background: #ffffff; color: #333; }
+
+        /* تدرجات الألوان الفرعية */
+        .color-row-1-1 { background: #ff5722; } /* R1 */
+        .color-row-1-2 { background: #8bc34a; } /* G1 */
+        .color-row-1-3 { background: #03a9f4; } /* B1 */
+        
+        .color-row-2-1 { background: #ff9800; } /* R2 */
+        .color-row-2-2 { background: #00bcd4; } /* G2 */
+        .color-row-2-3 { background: #3f51b5; } /* B2 */
+
+        .color-row-3-1 { background: #ffc107; } /* R3 */
+        .color-row-3-2 { background: #009688; } /* G3 */
+        .color-row-3-3 { background: #673ab7; } /* B3 */
+
+        .color-row-4-1 { background: #ffeb3b; color: #333; } /* R4 */
+        .color-row-4-2 { background: #4db6ac; } /* G4 */
+        .color-row-4-3 { background: #9c27b0; } /* B4 */
+
+        /* أزرار الوظائف الجانبية */
+        .func-btn { background: #f5f5f5; color: #333; border-radius: 5px; width: 55px; font-size: 9px;}
+        .music { background: #fff; color: #333; font-size: 14px;}
+        .diy { background: #eee; color: #333; border-radius: 8px; font-size: 9px;}
+        .arrows { background: #333; color: #fff; font-size: 14px;}
+
+        #status-log {
+            position: fixed;
+            bottom: 10px;
+            background: rgba(255,255,255,0.9);
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: #333;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="remote-container">
+        <div class="grid">
+            <button class="bright" onclick="send('0xFF3AC5', 'Bright+')"><i class="fa-solid fa-sun"></i>+</button>
+            <button class="bright" onclick="send('0xFFBA45', 'Bright-')"><i class="fa-solid fa-sun"></i>-</button>
+            <button class="play" onclick="send('0xFF827D', 'Play')"><i class="fa-solid fa-circle-play"></i></button>
+            <button class="power" onclick="send('0xFF02FD', 'Power')"><i class="fa-solid fa-power-off"></i></button>
+
+            <button class="red" onclick="send('0xFF1AE5', 'Red')">R</button>
+            <button class="green" onclick="send('0xFF9A65', 'Green')">G</button>
+            <button class="blue" onclick="send('0xFFA25D', 'Blue')">B</button>
+            <button class="white" onclick="send('0xFF22DD', 'White')">W</button>
+
+            <button class="color-row-1-1" onclick="send('0xFF2AD5', 'R1')"></button>
+            <button class="color-row-1-2" onclick="send('SAAA55', 'G1')"></button>
+            <button class="color-row-1-3" onclick="send('0xFF926D', 'B1')"></button>
+            <button class="music" onclick="send('0xFF12ED', 'Music 1')"><i class="fa-solid fa-music"></i>1</button>
+
+            <button class="color-row-2-1" onclick="send('0xFF0AF5', 'R2')"></button>
+            <button class="color-row-2-2" onclick="send('0xFF8A75', 'G2')"></button>
+            <button class="color-row-2-3" onclick="send('0xFFB24D', 'B2')"></button>
+            <button class="music" onclick="send('0xFF32CD', 'Music 2')"><i class="fa-solid fa-music"></i>2</button>
+
+            <button class="color-row-3-1" onclick="send('0xFF38C7', 'R3')"></button>
+            <button class="color-row-3-2" onclick="send('0xFFB847', 'G3')"></button>
+            <button class="color-row-3-3" onclick="send('0xFF7887', 'B3')"></button>
+            <button class="music" onclick="send('0xFFF807', 'Music 3')"><i class="fa-solid fa-music"></i>3</button>
+
+            <button class="color-row-4-1" onclick="send('0xFF18E7', 'R4')"></button>
+            <button class="color-row-4-2" onclick="send('0xFF9867', 'G4')"></button>
+            <button class="color-row-4-3" onclick="send('0xFF58A7', 'B4')"></button>
+            <button class="music" onclick="send('0xFFD827', 'Music 4')"><i class="fa-solid fa-music"></i>4</button>
+
+            <button class="arrows" onclick="send('0xFF28D7', 'R up')"><i class="fa-solid fa-arrow-up"></i></button>
+            <button class="arrows" onclick="send('0xFFA857', 'G up')"><i class="fa-solid fa-arrow-up"></i></button>
+            <button class="arrows" onclick="send('0xFF6897', 'B up')"><i class="fa-solid fa-arrow-up"></i></button>
+            <button class="func-btn" onclick="send('0xFFE817', 'Auto')">AUTO</button>
+
+            <button class="arrows" onclick="send('0xFF08F7', 'R down')"><i class="fa-solid fa-arrow-down"></i></button>
+            <button class="arrows" onclick="send('0xFF8877', 'G down')"><i class="fa-solid fa-arrow-down"></i></button>
+            <button class="arrows" onclick="send('0xFF48B7', 'B down')"><i class="fa-solid fa-arrow-down"></i></button>
+            <button class="func-btn" onclick="send('0xFFC837', 'Slow')">SLOW</button>
+
+            <button class="diy" onclick="send('0xFF30CF', 'DIY1')">DIY1</button>
+            <button class="diy" onclick="send('0xFFB04F', 'DIY2')">DIY2</button>
+            <button class="diy" onclick="send('0xFF708F', 'DIY3')">DIY3</button>
+            <button class="func-btn" onclick="send('0xFFF00F', 'Quick')">QUICK</button>
+
+            <button class="diy" onclick="send('0xFF10EF', 'DIY4')">DIY4</button>
+            <button class="diy" onclick="send('0xFF906F', 'DIY5')">DIY5</button>
+            <button class="diy" onclick="send('0xFF50AF', 'DIY6')">DIY6</button>
+            <button class="func-btn" onclick="send('0xFFD02F', 'Flash')">FLASH</button>
+
+            <button class="func-btn" onclick="send('0xFF20DF', 'Jump3')">JUMP3</button>
+            <button class="func-btn" onclick="send('0xFFA05F', 'Jump7')">JUMP7</button>
+            <button class="func-btn" onclick="send('0xFF609F', 'Fade3')">FADE3</button>
+            <button class="func-btn" onclick="send('0xFFE01F', 'Fade7')">FADE7</button>
+        </div>
+    </div>
+
+    <div id="status-log">جهاز التحكم جاهز</div>
+
+    <script>
+        const IP = "192.168.178.26";
+
+        function send(code, label) {
+            const log = document.getElementById('status-log');
+            const url = `http://${IP}/send?code=${code}`;
+            
+            // في حالة كان الكود لا يحتوي على /send (مثل G1)
+            const finalUrl = code.startsWith('0x') ? url : `http://${IP}/${code}`;
+
+            log.innerText = "إرسال: " + label;
+
+            // استخدام fetch مع إهمال الـ CORS للعمل مع الأجهزة المحلية
+            fetch(finalUrl, { mode: 'no-cors' })
+                .then(() => {
+                    log.innerText = "تم إرسال: " + label;
+                    console.log("Success:", label, code);
+                })
+                .catch(err => {
+                    log.innerText = "خطأ في الإرسال";
+                    console.error("Error:", err);
+                });
+            
+            if (navigator.vibrate) navigator.vibrate(30);
+        }
+    </script>
+</body>
+</html>
