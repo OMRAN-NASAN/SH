@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Samsung Remote Control</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --remote-bg: #222222;
+            --button-bg: #1a1a1a;
+            --text-color: #dddddd;
+            --highlight: #ffffff;
+            --metal-texture: repeating-linear-gradient(
+                90deg,
+                #2b2b2b 0px,
+                #262626 1px,
+                #2b2b2b 2px
+            );
+        }
+
+        body {
+            background-color: #f0f0f0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+
+        /* Remote Body */
+        .remote {
+            width: 220px;
+            height: 750px;
+            background-color: var(--remote-bg);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            position: relative;
+            overflow: hidden;
+            user-select: none;
+            /* Prevent double-tap zoom on mobile */
+            touch-action: manipulation;
+        }
+
+        /* Brushed Metal Bottom Section */
+        .remote::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 35%;
+            background: var(--metal-texture);
+            z-index: 0;
+            opacity: 0.8;
+            pointer-events: none;
+        }
+
+        /* Content Wrapper */
+        .controls-area {
+            z-index: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        /* Common Button Styling */
+        button {
+            border: none;
+            background: transparent;
+            color: var(--text-color);
+            cursor: pointer;
+            transition: all 0.1s;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            outline: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        button:active {
+            transform: scale(0.92);
+            opacity: 0.7;
+        }
+
+        /* Row Layouts */
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 10px;
+        }
+
+        /* Power Button */
+        .power-btn {
+            color: #ff4444;
+            font-size: 18px;
+        }
+
+        /* Number & Dots Row */
+        .tiny-btn-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 10px;
+        }
+        .tiny-btn {
+            font-size: 12px;
+            color: var(--text-color);
+        }
+        .dots-icon {
+            display: flex;
+            gap: 2px;
+        }
+        .dot {
+            width: 4px;
+            height: 4px;
+            border-radius: 50%;
+        }
+
+        /* D-PAD Ring */
+        .d-pad-container {
+            display: flex;
+            justify-content: center;
+            margin: 10px 0;
+        }
+
+        .d-pad {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            background: #1e1e1e;
+            box-shadow: inset 0 0 5px rgba(0,0,0,0.8), 0 2px 5px rgba(0,0,0,0.5);
+            position: relative;
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            grid-template-rows: 1fr 1fr 1fr;
+        }
+
+        .d-btn {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+        }
+        /* Positioning D-Pad buttons */
+        .d-up { grid-column: 2; grid-row: 1; }
+        .d-down { grid-column: 2; grid-row: 3; }
+        .d-left { grid-column: 1; grid-row: 2; }
+        .d-right { grid-column: 3; grid-row: 2; }
+        
+        /* Center Select Button */
+        .d-center {
+            grid-column: 2; 
+            grid-row: 2;
+            background: #151515;
+            border-radius: 100%;
+            margin: 2px;
+            box-shadow: 0 0 5px rgba(0,0,0,0.5);
+        }
+
+        /* Navigation Row */
+        .nav-row {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+        }
+        .nav-btn {
+            font-size: 16px;
+        }
+
+        /* Rockers (Vol / CH) */
+        .rocker-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0 15px;
+        }
+        
+        .rocker {
+            width: 45px;
+            height: 100px;
+            background: #111;
+            border-radius: 25px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 0;
+            box-shadow: inset 0 0 5px rgba(255,255,255,0.05);
+            position: relative;
+        }
+
+        .rocker span {
+            font-size: 10px;
+            font-weight: bold;
+        }
+        
+        .rocker i {
+            font-size: 12px;
+        }
+
+        /* Invisible clickable areas for rockers */
+        .rocker-click {
+            width: 100%;
+            height: 30%;
+            position: absolute;
+            left: 0;
+            background: transparent;
+        }
+        .rocker-top { top: 0; }
+        .rocker-mid { top: 35%; height: 30%; }
+        .rocker-bot { bottom: 0; }
+
+        /* App Buttons Grid */
+        .app-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            padding: 10px 0;
+        }
+
+        .app-btn {
+            background: #1a1a1a;
+            height: 35px;
+            border-radius: 4px;
+            font-size: 9px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            text-transform: uppercase;
+        }
+
+        .netflix { color: #E50914; }
+        .prime { color: #00A8E1; text-transform: lowercase; font-size: 11px; }
+        .samsung-tv { color: #fff; font-size: 8px; text-align: center; line-height: 1;}
+        .disney { color: #fff; font-size: 10px; }
+
+        /* Feedback Log */
+        #log {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            font-family: monospace;
+            font-size: 12px;
+            min-width: 200px;
+            z-index: 100;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="remote">
+        <div class="controls-area">
+            
+            <div class="row">
+                <button class="power-btn" onclick="send('0xE0E06798', 'Power')">
+                    <i class="fa-solid fa-power-off"></i>
+                </button>
+            </div>
+
+            <div class="tiny-btn-row">
+                <button class="tiny-btn" onclick="send('0xE0E04BB4', '123 / Settings')">
+                    <i class="fa-solid fa-gear"></i> <span style="margin-left:3px; font-size:10px">123</span>
+                </button>
+                <button class="tiny-btn dots-icon" onclick="send('0xE0E0738C', 'Color Buttons')">
+                    <div class="dot" style="background:#d93025"></div>
+                    <div class="dot" style="background:#1e8e3e"></div>
+                    <div class="dot" style="background:#1a73e8"></div>
+                    <div class="dot" style="background:#f9ab00"></div>
+                </button>
+            </div>
+
+            <div class="d-pad-container">
+                <div class="d-pad">
+                    <button class="d-btn d-up" onclick="send('0xE0E006F9', 'Up')"></button>
+                    <button class="d-btn d-left" onclick="send('0xE0E0A659', 'Left')"></button>
+                    <button class="d-center" onclick="send('0xE0E016E9', 'OK')"></button>
+                    <button class="d-btn d-right" onclick="send('0xE0E046B9', 'Right')"></button>
+                    <button class="d-btn d-down" onclick="send('0xE0E08679', 'Down')"></button>
+                </div>
+            </div>
+
+            <div class="nav-row">
+                <button class="nav-btn" onclick="send('0xE0E01AE5', 'Back')"><i class="fa-solid fa-arrow-rotate-left"></i></button>
+                <button class="nav-btn" onclick="send('0xE0E09E61', 'Home')"><i class="fa-solid fa-house"></i></button>
+                <button class="nav-btn" onclick="send('0xE0E09D62', 'Play/Stop')"><i class="fa-solid fa-play"></i><i class="fa-solid fa-pause" style="margin-left:-4px; font-size: 10px"></i></button>
+            </div>
+
+            <div class="rocker-row">
+                <div class="rocker">
+                    <button class="rocker-click rocker-top" onclick="send('0xE0E0E01F', 'Vol +')"></button>
+                    <button class="rocker-click rocker-mid" onclick="send('0xE0E0F00F', 'Mute')"></button>
+                    <button class="rocker-click rocker-bot" onclick="send('0xE0E0D02F', 'Vol -')"></button>
+                    
+                    <i class="fa-solid fa-plus"></i>
+                    <span>VOL</span>
+                    <i class="fa-solid fa-minus"></i>
+                </div>
+
+                <div class="rocker">
+                    <button class="rocker-click rocker-top" onclick="send('0xE0E048B7', 'CH +')"></button>
+                    <button class="rocker-click rocker-mid" onclick="send('0xE0E0F20D', 'Guide')"></button>
+                    <button class="rocker-click rocker-bot" onclick="send('0xE0E008F7', 'CH -')"></button>
+
+                    <i class="fa-solid fa-angle-up"></i>
+                    <span>CH</span>
+                    <i class="fa-solid fa-angle-down"></i>
+                </div>
+            </div>
+
+            <div class="app-grid">
+                <button class="app-btn netflix" onclick="send('0xE0E0CF30', 'Netflix')">NETFLIX</button>
+                <button class="app-btn samsung-tv" onclick="send('0xE0E02DD2', 'Samsung TV')">Samsung<br>TV Plus</button>
+                <button class="app-btn prime" onclick="send('0xE0E02FD0', 'Prime Video')">prime video</button>
+                <button class="app-btn disney" onclick="send('0xE0E0FB04', 'Disney+')">Disney+</button>
+            </div>
+
+        </div>
+    </div>
+
+    <div id="log">Ready</div>
+
+    <script>
+        const IP = "192.168.178.26";
+
+        function send(code, label) {
+            const logDiv = document.getElementById('log');
+            const url = `http://${IP}/send?code=${code}`;
+
+            logDiv.innerHTML = `Sending: <b>${label}</b><br><small>${code}</small>`;
+            logDiv.style.transform = "scale(1.05)";
+            
+            // Visual feedback reset
+            setTimeout(() => {
+                logDiv.style.transform = "scale(1)";
+            }, 100);
+
+            // Vibrate on mobile
+            if (navigator.vibrate) {
+                navigator.vibrate(30);
+            }
+
+            // Send request
+            // mode: 'no-cors' is used to allow sending requests to local IoT devices
+            // that might not have CORS headers set up correctly.
+            fetch(url, { mode: 'no-cors' })
+                .then(() => {
+                    console.log(`Sent ${label}: ${code}`);
+                })
+                .catch(err => {
+                    console.error("Fetch error:", err);
+                    logDiv.innerHTML = `Error sending to<br>${IP}`;
+                });
+        }
+    </script>
+</body>
+</html>
