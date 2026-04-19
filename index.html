@@ -181,7 +181,7 @@
                 <div class="room-icon"><i class="fa-solid fa-bolt"></i></div>
                 <span class="room-name">المحرك</span>
             </div>
-            <div class="room-card r-salon" onclick="go('http://192.1.1.1/send?salon')">
+<div class="room-card r-salon" onclick="toggleSalon(this)">
                 <div class="room-icon"><i class="fa-solid fa-couch"></i></div>
                 <span class="room-name">الصالون</span>
             </div>
@@ -292,6 +292,33 @@
             mainStatus.innerText = "خطأ في الاتصال";
         });
     }
+// متغير لحفظ حالة الصالون الحالية (مطفأ كافتراض)
+let isSalonOn = false; 
+
+function toggleSalon(element) {
+    // اهتزاز خفيف للمس كما هو الحال في دالة go
+    if (navigator.vibrate) navigator.vibrate(50); 
+
+    if (isSalonOn) {
+        // --- حالة الإطفاء (Switch OFF) ---
+        // استبدل الكود بالرابط المخصص للإطفاء في جهازك
+        fetch('http://192.168.178.26/send?code=0xFF906F').catch(err => console.log(err));
+        
+        // إعادة لون الكرت لشكله المطفأ الطبيعي
+        element.style.border = "1px solid #f1f5f9";
+        element.style.background = "white"; 
+        isSalonOn = false;
+    } else {
+        // --- حالة التشغيل (Switch ON) ---
+        // استبدل الكود بالرابط المخصص للتشغيل في جهازك
+        fetch('http://192.168.178.26/send?code=0xFF807F').catch(err => console.log(err));
+        
+        // تغيير لون الكرت (مثلاً إطار أخضر وخلفية فاتحة) للدلالة على التشغيل
+        element.style.border = "2px solid #10b981";
+        element.style.background = "#ecfdf5"; 
+        isSalonOn = true;
+    }
+}
 
     function go(url){
         if (navigator.vibrate) navigator.vibrate(50);
