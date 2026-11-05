@@ -1,0 +1,589 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#e8ebe9">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="البيت">
+<!-- عند تقديم الصفحة من الـ ESP يضع هنا العناوين الافتراضية (وعند فتحها كملف يتجاهلها المتصفح) -->
+<script src="/config.js"></script>
+<title>التحكم المنزلي</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<style>
+  :root{
+    --ground:#e8ebe9;
+    --surface:#f6f7f6;
+    --raise:#dde1df;
+    --ink:#111516;
+    --mut:#556064;
+    --open:#c4311d;
+    --closed:#1c7842;
+    --off:#556064;
+    --pad:16px;
+    --font:"IBM Plex Sans Arabic",system-ui,-apple-system,"Segoe UI",Tahoma,Arial,sans-serif;
+  }
+  @media(min-width:700px){:root{--pad:24px}}
+  @media(min-width:1100px){:root{--pad:32px}}
+
+  *{box-sizing:border-box}
+  body{
+    margin:0;background:var(--ground);color:var(--ink);font-family:var(--font);
+    font-size:16px;line-height:1.5;
+    padding:max(20px,env(safe-area-inset-top)) max(var(--pad),env(safe-area-inset-right)) max(80px,calc(env(safe-area-inset-bottom) + 48px)) max(var(--pad),env(safe-area-inset-left));
+  }
+  button{font-family:inherit;touch-action:manipulation;-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+  :focus-visible{outline:2px solid var(--ink);outline-offset:2px}
+  .app{max-width:1360px;margin:0 auto}
+
+  @keyframes rise{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+  .rise{animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+  .d1{animation-delay:.05s}.d2{animation-delay:.12s}.d3{animation-delay:.19s}.d4{animation-delay:.26s}
+  @media(prefers-reduced-motion:reduce){.rise{animation:none}*{transition:none!important}}
+
+  /* ---------- الرأس ---------- */
+  header{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px}
+  h1{margin:0;font-size:1.6rem;line-height:1.2;font-weight:700}
+  .gear{width:44px;height:44px;border:0;border-radius:4px;background:var(--surface);color:var(--ink);cursor:pointer;font-size:17px;transition:background .15s,transform .15s}
+  .gear:hover{background:var(--raise)}
+  .gear:active{transform:scale(.92)}
+
+  .layout{display:flex;flex-direction:column;gap:28px}
+  @media(min-width:1100px){.layout{display:grid;grid-template-columns:380px 1fr;gap:24px;align-items:start}}
+
+  .sec{margin:0 0 12px;font-size:1.05rem;font-weight:700}
+  .devhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+  .devhead .sec{margin:0}
+  .devstat{display:flex;gap:16px;font-size:.85rem;color:var(--mut)}
+  .devstat span{display:flex;align-items:center;gap:7px}
+  .devstat span::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--mut)}
+  .devstat .on::before{background:var(--closed)}
+  .devstat .off::before{background:var(--open)}
+  .logbox summary{cursor:pointer;margin:0 0 8px;padding:10px 0;font-size:1rem;font-weight:700}
+  .logbox:not([open]) summary{margin-bottom:0}
+  @media(min-width:700px){.lamp-quick + .logbox{margin-top:20px}}
+
+  /* ---------- الباب ---------- */
+  .door{display:flex;flex-direction:column;gap:16px}
+  @media(min-width:700px) and (max-width:1099px){
+    .door{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+  }
+  .door-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+  .door-head .sec{margin:0}
+  .conn{display:flex;align-items:center;gap:8px;font-size:.85rem;color:var(--mut)}
+  .conn::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--mut)}
+  .conn.on::before{background:var(--closed)}
+  .conn.off::before{background:var(--open)}
+
+  .field{
+    background:var(--off);color:#fff;border-radius:4px;padding:26px 24px 24px;min-height:230px;
+    display:flex;flex-direction:column;justify-content:flex-end;gap:6px;transition:background .35s;
+  }
+  .door[data-state=open] .field{background:var(--open)}
+  .door[data-state=closed] .field{background:var(--closed)}
+  .field i{font-size:44px;margin-bottom:auto;padding-bottom:18px}
+  .field-title{font-size:clamp(2.3rem,9vw,3.1rem);line-height:1.1;font-weight:700}
+  .field-since{font-size:.9rem;opacity:.9}
+  .door.stale .field,.door.stale .sensors,.door.stale .log{opacity:.55}
+
+  .sensors{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+  .sensor{background:var(--surface);border-radius:4px;padding:14px 16px;display:flex;flex-direction:column;gap:2px}
+  .sensor b{font-size:.85rem;font-weight:600;color:var(--mut)}
+  .sensor .v{font-size:1.25rem;font-weight:700}
+  .sensor.closed .v{color:var(--closed)}
+  .sensor.open .v{color:var(--open)}
+  .sensor .t{font-size:.8rem;color:var(--mut)}
+
+  .log{display:flex;flex-direction:column;gap:4px;max-height:270px;overflow:auto}
+  .log div{display:flex;justify-content:space-between;gap:12px;padding:10px 14px;border-radius:4px;background:var(--surface);font-size:.9rem}
+  .log div.s{color:var(--mut)}
+  .log time{white-space:nowrap;direction:ltr;font-size:.8rem;color:var(--mut)}
+  .log .empty{color:var(--mut)}
+
+  /* ---------- اللمبة ---------- */
+  .lamp-block{background:var(--surface);border-radius:4px;padding:20px}
+  .lamp-block h3{margin:0 0 14px;font-size:1.05rem;display:flex;align-items:center;gap:10px}
+  .lamp-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .lamp-btns button{
+    border:0;border-radius:4px;padding:18px 10px;font-size:1.05rem;font-weight:700;cursor:pointer;
+    display:flex;gap:9px;justify-content:center;align-items:center;transition:transform .12s,background .15s;
+  }
+  .lamp-btns button:active{transform:scale(.95)}
+  .lamp-btns .on{background:var(--ink);color:#fff}
+  .lamp-btns .on:hover{background:#2a3134}
+  .lamp-btns .off{background:var(--raise);color:var(--ink)}
+  .lamp-btns .off:hover{background:#d0d5d3}
+  .lamp-quick{display:none}
+  @media(min-width:700px){.lamp-quick{display:block}}
+
+  /* ---------- التبويبات (الهاتف) ---------- */
+  .tabs{display:flex;gap:4px;margin-bottom:12px}
+  .tab{
+    flex:1;border:0;border-radius:4px;background:var(--surface);color:var(--mut);padding:13px 6px;font-size:.95rem;font-weight:600;
+    cursor:pointer;display:flex;gap:8px;justify-content:center;align-items:center;transition:background .15s,color .15s;
+  }
+  .tab[aria-selected=true]{background:var(--ink);color:#fff}
+  .panel{display:none;justify-content:center;background:var(--surface);border-radius:4px;padding:24px 16px}
+  .panel.active{display:flex}
+  .panel .lamp-block{background:none;padding:0;width:100%;max-width:340px}
+  @media(min-width:700px){
+    .tabs{display:none}
+    .stages{display:flex;gap:12px;align-items:stretch}
+    .panel{display:flex;flex:1 1 auto;align-items:flex-start;padding:20px 12px}
+    .panel[data-panel=lamp]{display:none}
+  }
+
+  /* ---------- ريموت شريط LED ---------- */
+  .led-remote{width:280px;background:#1a1a1a;padding:20px 15px;border-radius:12px}
+  .led-remote .grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;justify-items:center}
+  .led-remote button{
+    width:52px;height:42px;border-radius:21px;border:none;cursor:pointer;display:flex;justify-content:center;align-items:center;
+    font-size:11px;font-weight:700;color:#fff;background:#2e2e2e;transition:transform .1s,filter .15s;
+    -webkit-tap-highlight-color:transparent;text-transform:uppercase;
+  }
+  .led-remote button:hover{filter:brightness(1.15)}
+  .led-remote button:active{transform:scale(.9);filter:brightness(.8)}
+  .led-remote button:focus-visible,.tv-remote button:focus-visible{outline-color:#fff}
+  .led-remote .power{background:#d32f2f;font-size:16px}
+  .led-remote .play{background:#4a4a4a;font-size:15px}
+  .led-remote .bright{background:#eee;color:#222;font-size:14px;gap:2px}
+  .led-remote .red{background:#f44336}.led-remote .green{background:#4caf50}.led-remote .blue{background:#2196f3}
+  .led-remote .white{background:#fff;color:#222}
+  .led-remote .c11{background:#ff5722}.led-remote .c12{background:#8bc34a}.led-remote .c13{background:#03a9f4}
+  .led-remote .c21{background:#ff9800}.led-remote .c22{background:#00bcd4}.led-remote .c23{background:#3f51b5}
+  .led-remote .c31{background:#ffc107}.led-remote .c32{background:#009688}.led-remote .c33{background:#673ab7}
+  .led-remote .c41{background:#ffeb3b}.led-remote .c42{background:#4db6ac}.led-remote .c43{background:#9c27b0}
+  .led-remote .func{background:#f5f5f5;color:#222;border-radius:7px}
+  .led-remote .music{background:#fff;color:#222;font-size:14px;gap:2px}
+  .led-remote .diy{background:#e8e8e8;color:#222;border-radius:9px}
+  .led-remote .arrows{background:#3a3a3a;color:#fff;font-size:14px}
+
+  /* ---------- ريموت التلفاز ---------- */
+  .tv-remote{
+    width:230px;background:#222;border-radius:24px;padding:28px 20px 34px;display:flex;flex-direction:column;
+    position:relative;overflow:hidden;user-select:none;touch-action:manipulation;
+  }
+  .tv-remote::after{content:'';position:absolute;bottom:0;left:0;width:100%;height:28%;background:#2b2b2b;z-index:0;pointer-events:none}
+  .tv-remote .controls{position:relative;z-index:1;display:flex;flex-direction:column;gap:18px}
+  .tv-remote button{
+    border:none;background:transparent;color:#ddd;cursor:pointer;transition:transform .1s,opacity .1s,background .15s;
+    display:flex;justify-content:center;align-items:center;-webkit-tap-highlight-color:transparent;
+  }
+  .tv-remote button:active{transform:scale(.92);opacity:.7}
+  .tv-remote .row{display:flex;justify-content:space-between;align-items:center;padding:0 10px}
+  .tv-remote .row button{min-width:40px;min-height:36px}
+  .tv-remote .power-btn{color:#ff5a4a;font-size:19px}
+  .tv-remote .tiny{font-size:13px}
+  .tv-remote .dots{display:flex;gap:4px}
+  .tv-remote .dot{width:7px;height:7px;border-radius:50%}
+  .tv-remote .d-pad{width:180px;height:180px;margin:4px auto;border-radius:50%;background:#171717;display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:1fr 1fr 1fr}
+  .tv-remote .d-btn{width:100%;height:100%;border-radius:50%;color:#8a8a8a;font-size:14px}
+  .tv-remote .d-btn:hover{background:#202020}
+  .tv-remote .d-up{grid-column:2;grid-row:1}.tv-remote .d-down{grid-column:2;grid-row:3}
+  .tv-remote .d-left{grid-column:1;grid-row:2}.tv-remote .d-right{grid-column:3;grid-row:2}
+  .tv-remote .d-center{grid-column:2;grid-row:2;background:#101010;border-radius:100%;margin:2px;font-size:12px;font-weight:700;color:#aaa}
+  .tv-remote .d-center:hover{background:#1c1c1c}
+  .tv-remote .nav-row{display:flex;justify-content:space-around;align-items:center}
+  .tv-remote .nav-row button{font-size:17px;min-width:44px;min-height:40px}
+  .tv-remote .rocker-row{display:flex;justify-content:space-between;padding:0 12px}
+  .tv-remote .rocker{width:46px;height:104px;background:#111;border-radius:25px;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:15px 0;position:relative;color:#ddd}
+  .tv-remote .rocker span{font-size:11px;font-weight:700}
+  .tv-remote .rocker i{font-size:12px}
+  .tv-remote .rocker-click{position:absolute;left:0;width:100%;height:32%;background:transparent}
+  .tv-remote .rk-top{top:0}.tv-remote .rk-mid{top:34%}.tv-remote .rk-bot{bottom:0}
+  .tv-remote .app-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;padding-top:6px}
+  .tv-remote .app-btn{background:#1a1a1a;height:38px;border-radius:5px;font-size:10px;font-weight:700;letter-spacing:.3px;text-transform:uppercase}
+  .tv-remote .app-btn:hover{background:#242424}
+  .tv-remote .netflix{color:#ff2b36}
+  .tv-remote .prime{color:#2bb5ea;text-transform:lowercase;font-size:12px}
+  .tv-remote .stv{color:#fff;font-size:9px;text-align:center;line-height:1.1;text-transform:none}
+  .tv-remote .disney{color:#fff;font-size:11px}
+
+  /* ---------- إشعار + إعدادات ---------- */
+  #toast{
+    position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(16px);background:var(--ink);color:#fff;
+    padding:10px 20px;border-radius:4px;font-size:.9rem;opacity:0;transition:opacity .2s,transform .2s;pointer-events:none;z-index:50;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+  #toast.err{background:var(--open)}
+  dialog{background:var(--surface);color:var(--ink);border:0;border-radius:8px;padding:24px;width:min(92vw,380px);font-family:var(--font)}
+  dialog::backdrop{background:rgba(17,21,22,.55)}
+  dialog h3{margin:0 0 4px;font-size:1.2rem}
+  dialog label{display:block;margin:16px 0 6px;font-size:.9rem;color:var(--mut)}
+  dialog input{width:100%;padding:12px;border-radius:4px;border:1px solid #aab2b0;background:#fff;color:var(--ink);direction:ltr;font:inherit}
+  .dlg-actions{display:flex;gap:8px;margin-top:20px}
+  .dlg-actions button{flex:1;padding:13px;border-radius:4px;border:0;font:inherit;font-weight:700;cursor:pointer}
+  .dlg-actions .save{background:var(--ink);color:#fff}
+  .dlg-actions .cancel{background:var(--raise);color:var(--ink)}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <header class="rise">
+    <h1>التحكم المنزلي</h1>
+    <button class="gear" id="openSettings" aria-label="الإعدادات"><i class="fa-solid fa-gear"></i></button>
+  </header>
+
+  <main class="layout">
+
+    <!-- ===== الباب ===== -->
+    <section class="door stale" id="door" data-state="unknown" aria-labelledby="doorH">
+      <div class="door-main rise d1">
+        <div class="door-head">
+          <h2 class="sec" id="doorH">الباب</h2>
+          <div class="conn" id="conn">—</div>
+        </div>
+        <div class="field" role="status" aria-live="polite">
+          <i id="doorIco" class="fa-solid fa-question" aria-hidden="true"></i>
+          <div class="field-title" id="doorTitle">جاري الاتصال...</div>
+          <div class="field-since" id="doorSince">&nbsp;</div>
+        </div>
+        <div class="sensors">
+          <div class="sensor" id="s1"><b>حساس 1</b><span class="v">—</span><span class="t"></span></div>
+          <div class="sensor" id="s2"><b>حساس 2</b><span class="v">—</span><span class="t"></span></div>
+        </div>
+      </div>
+
+      <div class="door-side rise d2">
+        <div class="lamp-quick">
+          <div class="lamp-block">
+            <h3><i class="fa-regular fa-lightbulb" aria-hidden="true"></i> لمبة الصالون</h3>
+            <div class="lamp-btns">
+              <button class="on" data-code="0xFF807F" data-label="تشغيل اللمبة"><i class="fa-solid fa-sun" aria-hidden="true"></i> تشغيل</button>
+              <button class="off" data-code="0xFF906F" data-label="إطفاء اللمبة"><i class="fa-solid fa-moon" aria-hidden="true"></i> إطفاء</button>
+            </div>
+          </div>
+        </div>
+        <details class="logbox" id="logbox" open>
+          <summary>آخر الأحداث</summary>
+          <div class="log" id="log"></div>
+        </details>
+      </div>
+    </section>
+
+    <!-- ===== الأجهزة ===== -->
+    <section class="devices rise d3" aria-labelledby="devH">
+      <div class="devhead">
+        <h2 class="sec" id="devH">الأجهزة</h2>
+        <div class="devstat" aria-label="حالة اتصال أجهزة الـ IR">
+          <span id="st-tv">التلفاز وLED</span>
+          <span id="st-lamp">اللمبة</span>
+        </div>
+      </div>
+
+      <div class="tabs" role="tablist">
+        <button class="tab" role="tab" data-tab="tv" aria-selected="true"><i class="fa-solid fa-tv" aria-hidden="true"></i> التلفاز</button>
+        <button class="tab" role="tab" data-tab="led" aria-selected="false"><i class="fa-solid fa-sliders" aria-hidden="true"></i> شريط LED</button>
+        <button class="tab" role="tab" data-tab="lamp" aria-selected="false"><i class="fa-regular fa-lightbulb" aria-hidden="true"></i> اللمبة</button>
+      </div>
+
+      <div class="stages">
+
+        <!-- التلفاز -->
+        <div class="panel active" data-panel="tv">
+          <div class="tv-remote" dir="ltr">
+            <div class="controls">
+              <div class="row">
+                <button class="power-btn" data-code="0xE0E06798" data-label="Power"><i class="fa-solid fa-power-off"></i></button>
+              </div>
+              <div class="row">
+                <button class="tiny" data-code="0xE0E04BB4" data-label="123"><i class="fa-solid fa-gear"></i><span style="margin-left:5px;font-size:11px">123</span></button>
+                <button class="dots" data-code="0xE0E0738C" data-label="Color">
+                  <span class="dot" style="background:#e8453a"></span><span class="dot" style="background:#2fae5c"></span><span class="dot" style="background:#3b8cf0"></span><span class="dot" style="background:#f9ab00"></span>
+                </button>
+              </div>
+
+              <div class="d-pad">
+                <button class="d-btn d-up" data-code="0xE0E006F9" data-label="Up"><i class="fa-solid fa-chevron-up"></i></button>
+                <button class="d-btn d-left" data-code="0xE0E0A659" data-label="Left"><i class="fa-solid fa-chevron-left"></i></button>
+                <button class="d-center" data-code="0xE0E016E9" data-label="OK">OK</button>
+                <button class="d-btn d-right" data-code="0xE0E046B9" data-label="Right"><i class="fa-solid fa-chevron-right"></i></button>
+                <button class="d-btn d-down" data-code="0xE0E08679" data-label="Down"><i class="fa-solid fa-chevron-down"></i></button>
+              </div>
+
+              <div class="nav-row">
+                <button data-code="0xE0E01AE5" data-label="Back"><i class="fa-solid fa-arrow-rotate-left"></i></button>
+                <button data-code="0xE0E09E61" data-label="Home"><i class="fa-solid fa-house"></i></button>
+                <button data-code="0xE0E09D62" data-label="Play/Stop"><i class="fa-solid fa-play"></i><i class="fa-solid fa-pause" style="margin-left:-4px;font-size:10px"></i></button>
+              </div>
+
+              <div class="rocker-row">
+                <div class="rocker">
+                  <button class="rocker-click rk-top" data-code="0xE0E0E01F" data-label="Vol +"></button>
+                  <button class="rocker-click rk-mid" data-code="0xE0E0F00F" data-label="Mute"></button>
+                  <button class="rocker-click rk-bot" data-code="0xE0E0D02F" data-label="Vol -"></button>
+                  <i class="fa-solid fa-plus"></i><span>VOL</span><i class="fa-solid fa-minus"></i>
+                </div>
+                <div class="rocker">
+                  <button class="rocker-click rk-top" data-code="0xE0E048B7" data-label="CH +"></button>
+                  <button class="rocker-click rk-mid" data-code="0xE0E0F20D" data-label="Guide"></button>
+                  <button class="rocker-click rk-bot" data-code="0xE0E008F7" data-label="CH -"></button>
+                  <i class="fa-solid fa-angle-up"></i><span>CH</span><i class="fa-solid fa-angle-down"></i>
+                </div>
+              </div>
+
+              <div class="app-grid">
+                <button class="app-btn netflix" data-code="0xE0E0CF30" data-label="Netflix">Netflix</button>
+                <button class="app-btn stv" data-code="0xE0E02DD2" data-label="Samsung TV Plus">Samsung<br>TV Plus</button>
+                <button class="app-btn prime" data-code="0xE0E02FD0" data-label="Prime Video">prime video</button>
+                <button class="app-btn disney" data-code="0xE0E0FB04" data-label="Disney+">Disney+</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- شريط LED -->
+        <div class="panel" data-panel="led">
+          <div class="led-remote" dir="ltr">
+            <div class="grid">
+              <button class="bright" data-code="0xFF3AC5" data-label="Bright +"><i class="fa-solid fa-sun"></i>+</button>
+              <button class="bright" data-code="0xFFBA45" data-label="Bright -"><i class="fa-solid fa-sun"></i>-</button>
+              <button class="play" data-code="0xFF827D" data-label="Play"><i class="fa-solid fa-circle-play"></i></button>
+              <button class="power" data-code="0xFF02FD" data-label="Power"><i class="fa-solid fa-power-off"></i></button>
+
+              <button class="red" data-code="0xFF1AE5" data-label="Red">R</button>
+              <button class="green" data-code="0xFF9A65" data-label="Green">G</button>
+              <button class="blue" data-code="0xFFA25D" data-label="Blue">B</button>
+              <button class="white" data-code="0xFF22DD" data-label="White">W</button>
+
+              <button class="c11" data-code="0xFF2AD5" data-label="R1"></button>
+              <button class="c12" data-code="0xFFAA55" data-label="G1"></button>
+              <button class="c13" data-code="0xFF926D" data-label="B1"></button>
+              <button class="music" data-code="0xFF12ED" data-label="Music 1"><i class="fa-solid fa-music"></i>1</button>
+
+              <button class="c21" data-code="0xFF0AF5" data-label="R2"></button>
+              <button class="c22" data-code="0xFF8A75" data-label="G2"></button>
+              <button class="c23" data-code="0xFFB24D" data-label="B2"></button>
+              <button class="music" data-code="0xFF32CD" data-label="Music 2"><i class="fa-solid fa-music"></i>2</button>
+
+              <button class="c31" data-code="0xFF38C7" data-label="R3"></button>
+              <button class="c32" data-code="0xFFB847" data-label="G3"></button>
+              <button class="c33" data-code="0xFF7887" data-label="B3"></button>
+              <button class="music" data-code="0xFFF807" data-label="Music 3"><i class="fa-solid fa-music"></i>3</button>
+
+              <button class="c41" data-code="0xFF18E7" data-label="R4"></button>
+              <button class="c42" data-code="0xFF9867" data-label="G4"></button>
+              <button class="c43" data-code="0xFF58A7" data-label="B4"></button>
+              <button class="music" data-code="0xFFD827" data-label="Music 4"><i class="fa-solid fa-music"></i>4</button>
+
+              <button class="arrows" data-code="0xFF28D7" data-label="R up"><i class="fa-solid fa-arrow-up"></i></button>
+              <button class="arrows" data-code="0xFFA857" data-label="G up"><i class="fa-solid fa-arrow-up"></i></button>
+              <button class="arrows" data-code="0xFF6897" data-label="B up"><i class="fa-solid fa-arrow-up"></i></button>
+              <button class="func" data-code="0xFFE817" data-label="Auto">AUTO</button>
+
+              <button class="arrows" data-code="0xFF08F7" data-label="R down"><i class="fa-solid fa-arrow-down"></i></button>
+              <button class="arrows" data-code="0xFF8877" data-label="G down"><i class="fa-solid fa-arrow-down"></i></button>
+              <button class="arrows" data-code="0xFF48B7" data-label="B down"><i class="fa-solid fa-arrow-down"></i></button>
+              <button class="func" data-code="0xFFC837" data-label="Slow">SLOW</button>
+
+              <button class="diy" data-code="0xFF30CF" data-label="DIY1">DIY1</button>
+              <button class="diy" data-code="0xFFB04F" data-label="DIY2">DIY2</button>
+              <button class="diy" data-code="0xFF708F" data-label="DIY3">DIY3</button>
+              <button class="func" data-code="0xFFF00F" data-label="Quick">QUICK</button>
+
+              <button class="diy" data-code="0xFF10EF" data-label="DIY4">DIY4</button>
+              <button class="diy" data-code="0xFF906F" data-label="DIY5">DIY5</button>
+              <button class="diy" data-code="0xFF50AF" data-label="DIY6">DIY6</button>
+              <button class="func" data-code="0xFFD02F" data-label="Flash">FLASH</button>
+
+              <button class="func" data-code="0xFF20DF" data-label="Jump3">JUMP3</button>
+              <button class="func" data-code="0xFFA05F" data-label="Jump7">JUMP7</button>
+              <button class="func" data-code="0xFF609F" data-label="Fade3">FADE3</button>
+              <button class="func" data-code="0xFFE01F" data-label="Fade7">FADE7</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- اللمبة (تبويب الهاتف فقط) -->
+        <div class="panel" data-panel="lamp">
+          <div class="lamp-block">
+            <h3><i class="fa-regular fa-lightbulb" aria-hidden="true"></i> لمبة الصالون</h3>
+            <div class="lamp-btns">
+              <button class="on" data-code="0xFF807F" data-label="تشغيل اللمبة"><i class="fa-solid fa-sun" aria-hidden="true"></i> تشغيل</button>
+              <button class="off" data-code="0xFF906F" data-label="إطفاء اللمبة"><i class="fa-solid fa-moon" aria-hidden="true"></i> إطفاء</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+</div>
+
+<div id="toast" role="status"></div>
+
+<dialog id="dlg">
+  <h3>الإعدادات</h3>
+  <label for="inTv">عنوان ESP التلفاز وشريط LED</label>
+  <input id="inTv" placeholder="192.168.178.25">
+  <label for="inLamp">عنوان ESP اللمبة</label>
+  <input id="inLamp" placeholder="192.168.178.27">
+  <label for="inDoor">عنوان ESP حساس الباب</label>
+  <input id="inDoor" placeholder="door.local أو 192.168.178.xx">
+  <div class="dlg-actions">
+    <button class="save" id="saveCfg">حفظ</button>
+    <button class="cancel" id="cancelCfg">إلغاء</button>
+  </div>
+</dialog>
+
+<script>
+  // ================= الإعدادات =================
+  // على الهاتف سجل الأحداث مطوي حتى تظهر الريموتات أولاً
+  if (window.matchMedia('(max-width:699px)').matches) document.getElementById('logbox').open = false;
+
+  // tv = ESP التلفاز وشريط LED ، lamp = ESP اللمبة ، door = ESP الباب
+  const HD = window.HOME_DEFAULTS || {};   // يأتي من الـ ESP عند فتح الصفحة منه
+  const DEFAULTS = { tv: HD.tv || "192.168.178.25", lamp: HD.lamp || "192.168.178.27", door: HD.door || "door.local" };   // غيّرها من زر الإعدادات أو هنا
+  let cfg = { ...DEFAULTS };
+  try {
+    const saved = JSON.parse(localStorage.getItem('homecfg') || '{}');
+    if (saved.ir && !saved.tv) saved.tv = saved.ir;   // ترحيل الإعداد القديم (جهاز IR واحد)
+    delete saved.ir;
+    Object.assign(cfg, saved);
+  } catch (e) {}
+
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+  // أسماء للأزرار التي لا تحمل نصاً مقروءاً (لقارئات الشاشة)
+  document.querySelectorAll('[data-code]').forEach(b => {
+    if (!b.closest('.lamp-block')) b.setAttribute('aria-label', b.dataset.label);
+  });
+
+  // ================= إرسال أكواد IR =================
+  let toastTimer;
+  function toast(msg, err) {
+    const t = $('toast');
+    t.textContent = msg;
+    t.className = 'show' + (err ? ' err' : '');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(() => t.className = '', 1400);
+  }
+
+  function send(code, label, dev) {
+    if (navigator.vibrate) navigator.vibrate(30);
+    toast('إرسال: ' + label);
+    const host = dev === 'lamp' ? cfg.lamp : cfg.tv;
+    const ctl = new AbortController();
+    const to = setTimeout(() => ctl.abort(), 3000);
+    // no-cors: ESP الـ IR لا يرسل ترويسات CORS، لذلك لا نقرأ الرد
+    fetch(`http://${host}/send?code=${code}`, { mode: 'no-cors', signal: ctl.signal })
+      .then(() => toast('تم إرسال: ' + label))
+      .catch(() => toast(dev === 'lamp' ? 'تعذّر الوصول لجهاز اللمبة' : 'تعذّر الوصول لجهاز التلفاز وLED', true))
+      .finally(() => clearTimeout(to));
+  }
+
+  document.addEventListener('click', e => {
+    const b = e.target.closest('[data-code]');
+    if (b) send(b.dataset.code, b.dataset.label, b.closest('.lamp-block') ? 'lamp' : 'tv');
+  });
+
+  // ================= التبويبات (الهاتف) =================
+  function showTab(name) {
+    document.querySelectorAll('.tab').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === name));
+    document.querySelectorAll('.panel').forEach(p => p.classList.toggle('active', p.dataset.panel === name));
+    try { localStorage.setItem('hometab', name); } catch (e) {}
+  }
+  document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => showTab(t.dataset.tab)));
+  try { const last = localStorage.getItem('hometab'); if (last) showTab(last); } catch (e) {}
+
+  // ================= حساس الباب =================
+  function setConn(on) {
+    const c = $('conn');
+    c.className = 'conn ' + (on ? 'on' : 'off');
+    c.textContent = on ? 'متصل' : 'غير متصل';
+    $('door').classList.toggle('stale', !on);
+  }
+
+  function renderSensor(id, s) {
+    const el = $(id);
+    el.className = 'sensor ' + (s.closed ? 'closed' : 'open');
+    el.querySelector('.v').textContent = s.closed ? 'مغلق' : 'مفتوح';
+    el.querySelector('.t').textContent = 'منذ ' + s.since;
+  }
+
+  function renderDoor(d) {
+    const st = d.door;
+    $('door').dataset.state = st;
+    $('doorIco').className = 'fa-solid ' + (st === 'open' ? 'fa-door-open' : st === 'closed' ? 'fa-door-closed' : 'fa-question');
+    $('doorTitle').textContent = st === 'open' ? 'الباب مفتوح' : st === 'closed' ? 'الباب مغلق' : 'الحالة غير معروفة';
+    $('doorSince').textContent = 'منذ ' + d.doorSince;
+    renderSensor('s1', d.s1);
+    renderSensor('s2', d.s2);
+    $('log').innerHTML = (d.log || []).slice(0, 10).map(e =>
+      `<div class="${e.src ? 's' : ''}"><span>${esc(e.msg)}</span><time>${esc(e.t)}</time></div>`
+    ).join('') || '<div class="empty">لا يوجد سجل بعد</div>';
+  }
+
+  let pollTimer;
+  async function pollDoor() {
+    const ctl = new AbortController();
+    const to = setTimeout(() => ctl.abort(), 3000);
+    try {
+      const r = await fetch(`http://${cfg.door}/api`, { signal: ctl.signal, cache: 'no-store' });
+      renderDoor(await r.json());
+      setConn(true);
+    } catch (e) {
+      setConn(false);
+      if ($('doorTitle').textContent === 'جاري الاتصال...') $('doorTitle').textContent = 'لا يوجد اتصال';
+    } finally {
+      clearTimeout(to);
+      pollTimer = setTimeout(pollDoor, 2000);
+    }
+  }
+  pollDoor();
+
+  // ================= حالة أجهزة الـ IR =================
+  // طلب no-cors ينجح فقط إذا ردّ الجهاز، فنعرف هل هو متصل بالشبكة
+  async function ping(host) {
+    const ctl = new AbortController();
+    const to = setTimeout(() => ctl.abort(), 2500);
+    try { await fetch(`http://${host}/ping`, { mode: 'no-cors', signal: ctl.signal, cache: 'no-store' }); return true; }
+    catch (e) { return false; }
+    finally { clearTimeout(to); }
+  }
+  let irTimer;
+  async function pollIr() {
+    clearTimeout(irTimer);
+    if (!document.hidden) {
+      const [a, b] = await Promise.all([ping(cfg.tv), ping(cfg.lamp)]);
+      $('st-tv').className = a ? 'on' : 'off';
+      $('st-lamp').className = b ? 'on' : 'off';
+    }
+    irTimer = setTimeout(pollIr, 10000);
+  }
+  pollIr();
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) pollIr(); });
+
+  // ================= نافذة الإعدادات =================
+  $('openSettings').onclick = () => { $('inTv').value = cfg.tv; $('inLamp').value = cfg.lamp; $('inDoor').value = cfg.door; $('dlg').showModal(); };
+  $('cancelCfg').onclick = () => $('dlg').close();
+  $('saveCfg').onclick = () => {
+    cfg.tv = $('inTv').value.trim() || DEFAULTS.tv;
+    cfg.lamp = $('inLamp').value.trim() || DEFAULTS.lamp;
+    cfg.door = $('inDoor').value.trim() || DEFAULTS.door;
+    // نحفظ فقط ما يختلف عن الافتراضي، حتى تبقى تغييرات الكود سارية
+    const keep = {};
+    for (const k of ['tv', 'lamp', 'door']) if (cfg[k] !== DEFAULTS[k]) keep[k] = cfg[k];
+    try { localStorage.setItem('homecfg', JSON.stringify(keep)); } catch (e) {}
+    $('dlg').close();
+    clearTimeout(pollTimer);
+    pollDoor();
+    pollIr();
+    toast('تم الحفظ');
+  };
+</script>
+<script>
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js').catch(function () {});
+</script>
+</body>
+</html>
