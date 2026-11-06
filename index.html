@@ -62,7 +62,7 @@
   .sec{margin:0 0 12px;font-size:1.05rem;font-weight:700}
   .devhead{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
   .devhead .sec{margin:0}
-  .devstat{display:flex;gap:16px;font-size:.85rem;color:var(--mut)}
+  .devstat{display:flex;flex-wrap:wrap;justify-content:flex-end;gap:4px 14px;font-size:.85rem;color:var(--mut)}
   .devstat span{display:flex;align-items:center;gap:7px}
   .devstat span::before{content:"";width:9px;height:9px;border-radius:50%;background:var(--mut)}
   .devstat .on::before{background:var(--closed)}
@@ -131,12 +131,16 @@
     cursor:pointer;display:flex;gap:8px;justify-content:center;align-items:center;transition:background .15s,color .15s;
   }
   .tab[aria-selected=true]{background:var(--ink);color:#fff}
+  @media(max-width:699px){
+    .tab{flex-direction:column;gap:5px;padding:10px 2px;font-size:.8rem}
+    .tab i{font-size:1.1rem}
+  }
   .panel{display:none;justify-content:center;background:var(--surface);border-radius:4px;padding:24px 16px}
   .panel.active{display:flex}
   .panel .lamp-block{background:none;padding:0;width:100%;max-width:340px}
   @media(min-width:700px){
     .tabs{display:none}
-    .stages{display:flex;gap:12px;align-items:stretch}
+    .stages{display:flex;flex-wrap:wrap;gap:12px;align-items:stretch}
     .panel{display:flex;flex:1 1 auto;align-items:flex-start;padding:20px 12px}
     .panel[data-panel=lamp]{display:none}
   }
@@ -165,6 +169,36 @@
   .led-remote .music{background:#fff;color:#222;font-size:14px;gap:2px}
   .led-remote .diy{background:#e8e8e8;color:#222;border-radius:9px}
   .led-remote .arrows{background:#3a3a3a;color:#fff;font-size:14px}
+
+  /* ---------- ريموت السقف ---------- */
+  .ceil-wrap{display:flex;flex-direction:column;align-items:center;gap:14px}
+  .ceil-out{display:flex;gap:4px;width:220px}
+  .ceil-out button{flex:1;border:0;border-radius:4px;padding:10px 4px;font-size:.85rem;font-weight:600;background:var(--raise);color:var(--mut);cursor:pointer;transition:background .15s,color .15s}
+  .ceil-out button[aria-pressed=true]{background:var(--ink);color:#fff}
+  .ceil-remote{
+    width:220px;background:#fff;border:1px solid #d9dedb;border-radius:16px;padding:26px 18px 28px;
+    display:flex;flex-direction:column;align-items:center;gap:24px;user-select:none;touch-action:manipulation;color:#333;
+  }
+  .ceil-remote button{
+    border:1px solid #e2e6e4;background:#fff;color:#333;cursor:pointer;display:flex;justify-content:center;align-items:center;
+    font-weight:700;transition:transform .1s,background .15s;-webkit-tap-highlight-color:transparent;
+  }
+  .ceil-remote button:hover{background:#f1f3f2}
+  .ceil-remote button:active{transform:scale(.92);background:#e4e8e6}
+  .ceil-remote button:focus-visible{outline-color:var(--ink)}
+  .ceil-top{display:flex;justify-content:space-between;width:80%}
+  .ceil-top button{width:46px;height:46px;border-radius:50%;font-size:18px}
+  .ceil-top .pw{color:var(--open)}
+  .ceil-ring{
+    width:168px;height:168px;border-radius:50%;border:1px solid #e2e6e4;background:#fafbfa;
+    display:grid;grid-template:repeat(3,1fr)/repeat(3,1fr);place-items:center;
+  }
+  .ceil-ring button{width:44px;height:44px;border-radius:50%;font-size:14px;border-color:transparent;background:transparent}
+  .ceil-ring .up{grid-area:1/2}.ceil-ring .lf{grid-area:2/1}.ceil-ring .rt{grid-area:2/3}.ceil-ring .dn{grid-area:3/2}
+  .ceil-ring .mid{grid-area:2/2;width:52px;height:52px;font-size:20px;border-color:#e2e6e4;background:#fff}
+  .ceil-presets{display:grid;grid-template-columns:repeat(2,46px);justify-content:space-between;width:80%;row-gap:14px}
+  .ceil-presets .c{grid-column:1/-1;justify-self:center}
+  .ceil-presets button{width:46px;height:46px;border-radius:50%;font-size:11px}
 
   /* ---------- ريموت التلفاز ---------- */
   .tv-remote{
@@ -277,6 +311,7 @@
         <div class="devstat" aria-label="حالة اتصال أجهزة الـ IR">
           <span id="st-tv">التلفاز وLED</span>
           <span id="st-lamp">اللمبة</span>
+          <span id="st-ceil">السقف</span>
         </div>
       </div>
 
@@ -284,6 +319,7 @@
         <button class="tab" role="tab" data-tab="tv" aria-selected="true"><i class="fa-solid fa-tv" aria-hidden="true"></i> التلفاز</button>
         <button class="tab" role="tab" data-tab="led" aria-selected="false"><i class="fa-solid fa-sliders" aria-hidden="true"></i> شريط LED</button>
         <button class="tab" role="tab" data-tab="lamp" aria-selected="false"><i class="fa-regular fa-lightbulb" aria-hidden="true"></i> اللمبة</button>
+        <button class="tab" role="tab" data-tab="ceil" aria-selected="false"><i class="fa-solid fa-lightbulb" aria-hidden="true"></i> السقف</button>
       </div>
 
       <div class="stages">
@@ -414,6 +450,37 @@
           </div>
         </div>
 
+        <!-- إضاءة السقف (ليدان عبر ESP واحد) -->
+        <div class="panel" data-panel="ceil">
+          <div class="ceil-wrap">
+            <div class="ceil-out" role="group" aria-label="أي إضاءة سقف يتحكم بها الريموت">
+              <button data-out="all" aria-pressed="true">الكل</button>
+              <button data-out="1" aria-pressed="false">سقف 1</button>
+              <button data-out="2" aria-pressed="false">سقف 2</button>
+            </div>
+            <div class="ceil-remote" dir="ltr">
+              <div class="ceil-top">
+                <button class="pw" data-code="0xFF629D" data-label="Power"><i class="fa-solid fa-power-off"></i></button>
+                <button data-code="0xFF22DD" data-label="Timer"><i class="fa-solid fa-clock"></i></button>
+              </div>
+              <div class="ceil-ring">
+                <button class="up" data-code="0xFFC23D" data-label="Brightness +"><i class="fa-regular fa-sun"></i></button>
+                <button class="lf" data-code="0xFFE01F" data-label="Temp -">K-</button>
+                <button class="mid" data-code="0xFF9867" data-label="Sleep Mode"><i class="fa-solid fa-moon"></i></button>
+                <button class="rt" data-code="0xFF906F" data-label="Temp +">K+</button>
+                <button class="dn" data-code="0xFFB04F" data-label="Brightness -"><i class="fa-solid fa-sun" style="opacity:.5;font-size:12px"></i></button>
+              </div>
+              <div class="ceil-presets">
+                <button data-code="0xFFA857" data-label="30%">30%</button>
+                <button data-code="0xFF6897" data-label="50%">50%</button>
+                <button class="c" data-code="0xFF10EF" data-label="4000K">4000K</button>
+                <button data-code="0xFF18E7" data-label="3000K">3000K</button>
+                <button data-code="0xFFA25D" data-label="6000K">6000K</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
       </div>
     </section>
   </main>
@@ -427,6 +494,8 @@
   <input id="inTv" placeholder="192.168.178.25">
   <label for="inLamp">عنوان ESP اللمبة</label>
   <input id="inLamp" placeholder="192.168.178.27">
+  <label for="inCeil">عنوان ESP السقف</label>
+  <input id="inCeil" placeholder="192.168.178.35">
   <label for="inDoor">عنوان ESP حساس الباب</label>
   <input id="inDoor" placeholder="door.local أو 192.168.178.xx">
   <div class="dlg-actions">
@@ -440,9 +509,9 @@
   // على الهاتف سجل الأحداث مطوي حتى تظهر الريموتات أولاً
   if (window.matchMedia('(max-width:699px)').matches) document.getElementById('logbox').open = false;
 
-  // tv = ESP التلفاز وشريط LED ، lamp = ESP اللمبة ، door = ESP الباب
+  // tv = ESP التلفاز وشريط LED ، lamp = ESP اللمبة ، ceil = ESP السقف ، door = ESP الباب
   const HD = window.HOME_DEFAULTS || {};   // يأتي من الـ ESP عند فتح الصفحة منه
-  const DEFAULTS = { tv: HD.tv || "192.168.178.25", lamp: HD.lamp || "192.168.178.27", door: HD.door || "door.local" };   // غيّرها من زر الإعدادات أو هنا
+  const DEFAULTS = { tv: HD.tv || "192.168.178.25", lamp: HD.lamp || "192.168.178.27", ceil: HD.ceil || "192.168.178.35", door: HD.door || "door.local" };   // غيّرها من زر الإعدادات أو هنا
   let cfg = { ...DEFAULTS };
   try {
     const saved = JSON.parse(localStorage.getItem('homecfg') || '{}');
@@ -469,22 +538,39 @@
     toastTimer = setTimeout(() => t.className = '', 1400);
   }
 
+  // أي ليد سقف يرسل: الكل | 1 | 2  (يُحفظ على الهاتف)
+  let ceilOut = 'all';
+  try { const o = localStorage.getItem('ceilout'); if (o === '1' || o === '2') ceilOut = o; } catch (e) {}
+  function paintOut() {
+    document.querySelectorAll('.ceil-out button').forEach(b => b.setAttribute('aria-pressed', b.dataset.out === ceilOut));
+  }
+  document.querySelectorAll('.ceil-out button').forEach(b => b.addEventListener('click', () => {
+    ceilOut = b.dataset.out;
+    try { localStorage.setItem('ceilout', ceilOut); } catch (e) {}
+    paintOut();
+  }));
+  paintOut();
+
+  const HOST_OF = dev => dev === 'lamp' ? cfg.lamp : dev === 'ceil' ? cfg.ceil : cfg.tv;
+  const FAIL_MSG = { lamp: 'تعذّر الوصول لجهاز اللمبة', ceil: 'تعذّر الوصول لجهاز السقف', tv: 'تعذّر الوصول لجهاز التلفاز وLED' };
+
   function send(code, label, dev) {
     if (navigator.vibrate) navigator.vibrate(30);
     toast('إرسال: ' + label);
-    const host = dev === 'lamp' ? cfg.lamp : cfg.tv;
+    const host = HOST_OF(dev);
+    const extra = dev === 'ceil' && ceilOut !== 'all' ? `&out=${ceilOut}` : '';
     const ctl = new AbortController();
     const to = setTimeout(() => ctl.abort(), 3000);
     // no-cors: ESP الـ IR لا يرسل ترويسات CORS، لذلك لا نقرأ الرد
-    fetch(`http://${host}/send?code=${code}`, { mode: 'no-cors', signal: ctl.signal })
+    fetch(`http://${host}/send?code=${code}${extra}`, { mode: 'no-cors', signal: ctl.signal })
       .then(() => toast('تم إرسال: ' + label))
-      .catch(() => toast(dev === 'lamp' ? 'تعذّر الوصول لجهاز اللمبة' : 'تعذّر الوصول لجهاز التلفاز وLED', true))
+      .catch(() => toast(FAIL_MSG[dev] || FAIL_MSG.tv, true))
       .finally(() => clearTimeout(to));
   }
 
   document.addEventListener('click', e => {
     const b = e.target.closest('[data-code]');
-    if (b) send(b.dataset.code, b.dataset.label, b.closest('.lamp-block') ? 'lamp' : 'tv');
+    if (b) send(b.dataset.code, b.dataset.label, b.closest('.lamp-block') ? 'lamp' : b.closest('.ceil-remote') ? 'ceil' : 'tv');
   });
 
   // ================= التبويبات (الهاتف) =================
@@ -555,9 +641,10 @@
   async function pollIr() {
     clearTimeout(irTimer);
     if (!document.hidden) {
-      const [a, b] = await Promise.all([ping(cfg.tv), ping(cfg.lamp)]);
+      const [a, b, c] = await Promise.all([ping(cfg.tv), ping(cfg.lamp), ping(cfg.ceil)]);
       $('st-tv').className = a ? 'on' : 'off';
       $('st-lamp').className = b ? 'on' : 'off';
+      $('st-ceil').className = c ? 'on' : 'off';
     }
     irTimer = setTimeout(pollIr, 10000);
   }
@@ -565,15 +652,16 @@
   document.addEventListener('visibilitychange', () => { if (!document.hidden) pollIr(); });
 
   // ================= نافذة الإعدادات =================
-  $('openSettings').onclick = () => { $('inTv').value = cfg.tv; $('inLamp').value = cfg.lamp; $('inDoor').value = cfg.door; $('dlg').showModal(); };
+  $('openSettings').onclick = () => { $('inTv').value = cfg.tv; $('inLamp').value = cfg.lamp; $('inCeil').value = cfg.ceil; $('inDoor').value = cfg.door; $('dlg').showModal(); };
   $('cancelCfg').onclick = () => $('dlg').close();
   $('saveCfg').onclick = () => {
     cfg.tv = $('inTv').value.trim() || DEFAULTS.tv;
     cfg.lamp = $('inLamp').value.trim() || DEFAULTS.lamp;
+    cfg.ceil = $('inCeil').value.trim() || DEFAULTS.ceil;
     cfg.door = $('inDoor').value.trim() || DEFAULTS.door;
     // نحفظ فقط ما يختلف عن الافتراضي، حتى تبقى تغييرات الكود سارية
     const keep = {};
-    for (const k of ['tv', 'lamp', 'door']) if (cfg[k] !== DEFAULTS[k]) keep[k] = cfg[k];
+    for (const k of ['tv', 'lamp', 'ceil', 'door']) if (cfg[k] !== DEFAULTS[k]) keep[k] = cfg[k];
     try { localStorage.setItem('homecfg', JSON.stringify(keep)); } catch (e) {}
     $('dlg').close();
     clearTimeout(pollTimer);
